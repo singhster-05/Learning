@@ -94,6 +94,10 @@ sumCount = ip.combineByKey(lambda x:(x,1),
                             lambda x,y: (x[0]+y[0], x[1]+y[1]))
 averageByKey = sumCount.map(lambda (key, (totSum,count)):(key, totSum/count)).collectAsMap()
 
+#averageby key using reduceByKey
+sumCount = ip.mapValues(lambda x: (x,1)).reduceByKey(lambda x,y: (x[0]+y[0]),(x[1]+y[1]))
+averageByKey = sumCount.map(lambda (key, (sum,Count)): (key, sum/Count)).collect()
+
 #Sorting
 ip.sortByKey(numPartitions=3).glom().collect()
 
