@@ -142,3 +142,38 @@ s.filter(s['price'] > 12).select(s['name']).show()
 #Spark SQL Commands
 s.registerTempTable('sample')
 sqlC.sql('select name from sample where price >= 12').collect()
+
+
+#Using accumulators in Spark
+#Empty line count
+
+file = sc.textFile(inputFile)
+
+blankLines = sc.accumulator(0)
+
+def extractCallSings(line):
+    global blankLines
+    if (line == '13'):
+        blankLines += 1
+    return line.split(" ")
+
+callSigns = file.flatMap(extractCallSings)
+callSigns.saveAsTextFile(outputDir + "/callSigns")
+print "Blank Lines: %d" % blankLines.value
+
+# Create Accumulators for validating call signs
+validSignCount = sc.accumulator(0)
+invalidSignCount = sc.accumulator(0)
+
+def validateSign(sign):
+    global validSignCount, invalidSignCount
+    if re.match(r"\A\d?[a-zA-Z]{1,2}\d{1,4}[a-zA-Z]{1,3}\Z", sign):
+        validSignCount += 1
+        return False
+    else:
+        invalidSignCount += 1
+        return True
+
+# Count the number of times we contacted each call sign
+invalidSigns = callSigns.filter(validateSign)
+contactCount = validSigns.map(lambda sign: (sign, 1)).reduceByKey(lambda (x, y): x + y)
